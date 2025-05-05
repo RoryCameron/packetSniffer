@@ -5,6 +5,11 @@ import os
 from dotenv import load_dotenv
 import requests
 import pickle
+from flask import Flask, render_template
+import threading
+
+# Initialize Flask
+app = Flask(__name__)
 
 load_dotenv()
 API_KEY = os.getenv("API_KEY")
@@ -12,10 +17,12 @@ WIFI_INTERFACE = os.getenv("WIFI_INTERFACE")
 URL = os.getenv("URL")
 
 
+# Creates/saves IPs to file
 def saveCheckedIps():
     with open("checkIPs.pkl", "wb") as f:
         pickle.dump(checked_ips, f)
 
+# Gets IPs from file
 def loadCheckedIps():
     
     global checked_ips
@@ -27,6 +34,10 @@ def loadCheckedIps():
         checked_ips = {}
 
 loadCheckedIps()
+
+@app.route("/")
+def dashboard():
+    return render_template("dashboard.html")
 
 def checkIP(ip):
     
@@ -55,10 +66,9 @@ def checkIP(ip):
         is_malicious = data['data']['abuseConfidenceScore'] > 50 # Confidence threshhold
         checked_ips[ip] = is_malicious
         saveCheckedIps()
-        return is_malicious # Suspicious IP
+        return is_malicious # returns True (Suspicious IP)
             
     return False
-
 
 
 def showPacket(packet):
@@ -79,4 +89,14 @@ def showPacket(packet):
     print("{} {}".format(timestamp, packet.summary())) # Summary of packet
 
 
-sniff(iface=WIFI_INTERFACE, prn=showPacket, store=False, promisc=True)
+def run_sniffer():
+    sniff(iface=WIFI_INTERFACE, prn=showPacket, store=False, promisc=True)
+
+
+if __name__ == "__main__":
+
+    sniffer_thread = threading.Thread(target=run_sniffer, daemon=True)
+    sniffer_thread.start()
+
+    app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False)
+
