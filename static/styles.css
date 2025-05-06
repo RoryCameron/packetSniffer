@@ -15,7 +15,7 @@ h1,h2 {
     color: #0F4761;
 }
 
-#stats {
+#stats, #IPLog{
     background-color: #ffffff;
     border: 1px solid #dee2e6;
     padding: 20px;
@@ -39,4 +39,12 @@ h1,h2 {
     border: 1px solid #dc3545;
     background-color: #f8d7da;
     border-radius: 5px;
+}
+
+.susIP {
+    background-color: #ffffff;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    margin: 10px;
+    padding-left: 10px;
 }

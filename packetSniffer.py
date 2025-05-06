@@ -24,7 +24,7 @@ SNIFF_DATA_FILE = os.getenv("SNIFF_DATA_FILE")
 # Data to be sent to dashboard
 sniffer_data = {
     "total_packets": 0,
-    "suspicious_ips": set(),
+    "suspicious_ips": [],
     "new_alert": None
 
 }
@@ -61,7 +61,7 @@ def load_sniffer_data():
     except FileNotFoundError:
         sniffer_data = {
             "total_packets": 0,
-            "suspicious_ips": set(),
+            "suspicious_ips": [],
             "new_alert": None
         }
 
@@ -80,7 +80,7 @@ def handle_connect():
     with data_lock:
         socketio.emit('update', {
             'total': sniffer_data["total_packets"],
-            'suspicious': len(sniffer_data["suspicious_ips"]),
+            'suspicious': sniffer_data["suspicious_ips"],
             'new_alert': sniffer_data['new_alert']
         })
 
@@ -143,7 +143,7 @@ def showPacket(packet):
             if checkIP(source_ip):
                 print("\n====== WARNING: IP: {} Reported as Suspicious ======".format(source_ip)) # Message to terminal
                 
-                sniffer_data["suspicious_ips"].add(source_ip)
+                sniffer_data["suspicious_ips"].append(source_ip)
                 sniffer_data["new_alert"] = "{}: Suspicious source IP detected: {}".format(timestamp, source_ip)
 
                 save_sniffer_data()
@@ -151,7 +151,7 @@ def showPacket(packet):
             if checkIP(dest_ip):
                 print("\n====== WARNING: IP: {} Reported as Suspicious ======".format(dest_ip))
 
-                sniffer_data["suspicious_ips"].add(dest_ip)
+                sniffer_data["suspicious_ips"].append(dest_ip)
                 sniffer_data["new_alert"] = "{}: Suspicious destination IP detected: {}".format(timestamp, dest_ip)
 
                 save_sniffer_data()
@@ -161,7 +161,7 @@ def showPacket(packet):
             with data_lock:
                 socketio.emit('update', {
                     'total': sniffer_data["total_packets"],
-                    'suspicious': len(sniffer_data["suspicious_ips"]),
+                    'suspicious': sniffer_data["suspicious_ips"],
                     'new_alert': sniffer_data['new_alert']
                 })
                 
