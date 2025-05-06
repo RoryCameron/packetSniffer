@@ -4,18 +4,16 @@
     <title>Packet Sniffer Dashboard</title>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
-    <style>
-        .alert { color: red; font-weight: bold; }
-        #stats { margin-bottom: 20px; }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
     <h1>Packet Sniffer Dashboard</h1>
     
     <div id="stats">
+        <h2>All Time Stats</h2>
         <p>Total packets captured: <span id="total">0</span></p>
         <p>Suspicious IPs detected: <span id="suspicious">0</span></p>
-        <p class="alert" id="alert"></p>
     </div>
+    <p class="alert" id="alert"></p>
 </body>
 </html>

@@ -144,7 +144,7 @@ def showPacket(packet):
                 print("\n====== WARNING: IP: {} Reported as Suspicious ======".format(source_ip)) # Message to terminal
                 
                 sniffer_data["suspicious_ips"].add(source_ip)
-                sniffer_data["new_alert"] = "Suspicious source IP detected: {}".format(source_ip)
+                sniffer_data["new_alert"] = "{}: Suspicious source IP detected: {}".format(timestamp, source_ip)
 
                 save_sniffer_data()
     
@@ -152,7 +152,7 @@ def showPacket(packet):
                 print("\n====== WARNING: IP: {} Reported as Suspicious ======".format(dest_ip))
 
                 sniffer_data["suspicious_ips"].add(dest_ip)
-                sniffer_data["new_alert"] = "Suspicious destination IP detected: {}".format(dest_ip)
+                sniffer_data["new_alert"] = "{}: Suspicious destination IP detected: {}".format(timestamp, dest_ip)
 
                 save_sniffer_data()
 
