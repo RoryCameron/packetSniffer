@@ -48,7 +48,7 @@ def loadCheckedIps():
     except FileNotFoundError:
         checked_ips = {}
 
-
+# Gets last alerts from file
 def save_sniffer_data():
     with open(SNIFF_DATA_FILE, "wb") as f:
         pickle.dump(sniffer_data, f)
@@ -68,11 +68,13 @@ def load_sniffer_data():
 loadCheckedIps()
 load_sniffer_data()
 
+# Default route
 @app.route("/")
 def dashboard():
     with data_lock:
         return render_template("dashboard.html", stats=sniffer_data)
 
+# When user connects (or refreshes)
 @socketio.on('connect')
 def handle_connect():
     with data_lock:
@@ -82,6 +84,16 @@ def handle_connect():
             'new_alert': sniffer_data['new_alert']
         })
 
+# ChatGPT - Prevents inline scripts executing, only allows js from own server, blocks inline script tags
+@app.after_request
+def apply_csp(response):
+    response.headers["Content-Security-Policy"] = (
+        "script-src 'self' https://cdn.socket.io; "
+        "default-src 'self';"
+    )
+    return response
+
+# Makes API call with current packet IP
 def checkIP(ip):
     
     if ip in checked_ips:
@@ -123,35 +135,28 @@ def showPacket(packet):
         source_ip = packet[IP].src
         dest_ip = packet[IP].dst
 
-        """
-        source_malicious = checkIP(source_ip)
-        dest_malicious = checkIP(dest_ip)
-        new_alert = None
-        """
-        
         with data_lock:
 
             sniffer_data["total_packets"] += 1
          
 
             if checkIP(source_ip):
-                print("\n====== WARNING: IP: {} Reported as Suspicious ======".format(source_ip))
+                print("\n====== WARNING: IP: {} Reported as Suspicious ======".format(source_ip)) # Message to terminal
+                
                 sniffer_data["suspicious_ips"].add(source_ip)
                 sniffer_data["new_alert"] = "Suspicious source IP detected: {}".format(source_ip)
+
                 save_sniffer_data()
-                #new_alert = "Suspicious source IP detected: {}".format(source_ip)
-               
-
-             
-
+    
             if checkIP(dest_ip):
                 print("\n====== WARNING: IP: {} Reported as Suspicious ======".format(dest_ip))
+
                 sniffer_data["suspicious_ips"].add(dest_ip)
                 sniffer_data["new_alert"] = "Suspicious destination IP detected: {}".format(dest_ip)
-                save_sniffer_data()
-                #new_alert = "Suspicious destination IP detected: {}".format(dest_ip)
 
-            
+                save_sniffer_data()
+
+        # Updates front-end
         if checkIP(source_ip) or checkIP(dest_ip):
             with data_lock:
                 socketio.emit('update', {
@@ -160,11 +165,7 @@ def showPacket(packet):
                     'new_alert': sniffer_data['new_alert']
                 })
                 
-                
-
-        
-             
-                
+    # Packet summary to terminal     
     print("{} {}".format(timestamp, packet.summary())) # Summary of packet
 
 
