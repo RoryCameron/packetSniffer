@@ -1,11 +1,43 @@
 <!DOCTYPE html>
-
 <html>
-    <head>
-        <title>Rory's Packry Sniffer</title>
-    </head>
+<head>
+    <title>Packet Sniffer Dashboard</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        .alert { color: red; font-weight: bold; }
+        #stats { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Packet Sniffer Dashboard</h1>
+    
+    <div id="stats">
+        <p>Total packets captured: <span id="total">0</span></p>
+        <p>Suspicious IPs detected: <span id="suspicious">0</span></p>
+        <p class="alert" id="alert"></p>
+    </div>
 
-    <body>
-        <h1>Rory's Packet Sniffer</h1>
-    </body>
+    <script>
+        const socket = io();
+
+  
+        
+        socket.on('update', function(data) {
+            document.getElementById('total').textContent = data.total;
+            document.getElementById('suspicious').textContent = data.suspicious;
+            
+            if (data.new_alert) {
+                const alertEl = document.getElementById('alert');
+                alertEl.textContent = 'New alert: ' + data.new_alert;
+                alertEl.style.display = 'block';
+                
+                // Flash effect
+                alertEl.style.backgroundColor = 'rgba(255,0,0,0.2)';
+                setTimeout(() => {
+                    alertEl.style.backgroundColor = '';
+                }, 1000);
+            }
+        });
+    </script>
+</body>
 </html>

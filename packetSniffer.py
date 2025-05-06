@@ -6,20 +6,35 @@ from dotenv import load_dotenv
 import requests
 import pickle
 from flask import Flask, render_template
+from flask_socketio import SocketIO, emit
 import threading
 
 # Initialize Flask
 app = Flask(__name__)
 
+socketio = SocketIO(app, async_mode = "threading", cors_allowed_origins="*")
+
 load_dotenv()
 API_KEY = os.getenv("API_KEY")
 WIFI_INTERFACE = os.getenv("WIFI_INTERFACE")
 URL = os.getenv("URL")
+IP_FILE = os.getenv("IP_FILE")
+SNIFF_DATA_FILE = os.getenv("SNIFF_DATA_FILE")
+
+# Data to be sent to dashboard
+sniffer_data = {
+    "total_packets": 0,
+    "suspicious_ips": set(),
+    "new_alert": None
+
+}
+
+data_lock = Lock()
 
 
 # Creates/saves IPs to file
 def saveCheckedIps():
-    with open("checkIPs.pkl", "wb") as f:
+    with open(IP_FILE, "wb") as f:
         pickle.dump(checked_ips, f)
 
 # Gets IPs from file
@@ -28,16 +43,44 @@ def loadCheckedIps():
     global checked_ips
 
     try:
-        with open("checkIPs.pkl", "rb") as f:
+        with open(IP_FILE, "rb") as f:
             checked_ips = pickle.load(f)
     except FileNotFoundError:
         checked_ips = {}
 
+
+def save_sniffer_data():
+    with open(SNIFF_DATA_FILE, "wb") as f:
+        pickle.dump(sniffer_data, f)
+
+def load_sniffer_data():
+    global sniffer_data
+    try:
+        with open(SNIFF_DATA_FILE, "rb") as f:
+            sniffer_data = pickle.load(f)
+    except FileNotFoundError:
+        sniffer_data = {
+            "total_packets": 0,
+            "suspicious_ips": set(),
+            "new_alert": None
+        }
+
 loadCheckedIps()
+load_sniffer_data()
 
 @app.route("/")
 def dashboard():
-    return render_template("dashboard.html")
+    with data_lock:
+        return render_template("dashboard.html", stats=sniffer_data)
+
+@socketio.on('connect')
+def handle_connect():
+    with data_lock:
+        socketio.emit('update', {
+            'total': sniffer_data["total_packets"],
+            'suspicious': len(sniffer_data["suspicious_ips"]),
+            'new_alert': sniffer_data['new_alert']
+        })
 
 def checkIP(ip):
     
@@ -80,11 +123,47 @@ def showPacket(packet):
         source_ip = packet[IP].src
         dest_ip = packet[IP].dst
 
-        if checkIP(source_ip):
-            print("\n====== WARNING: IP: {} Reported as Suspicious ======".format(source_ip))
+        """
+        source_malicious = checkIP(source_ip)
+        dest_malicious = checkIP(dest_ip)
+        new_alert = None
+        """
+        
+        with data_lock:
 
-        if checkIP(dest_ip):
-            print("\n====== WARNING: IP: {} Reported as Suspicious ======".format(dest_ip))
+            sniffer_data["total_packets"] += 1
+         
+
+            if checkIP(source_ip):
+                print("\n====== WARNING: IP: {} Reported as Suspicious ======".format(source_ip))
+                sniffer_data["suspicious_ips"].add(source_ip)
+                sniffer_data["new_alert"] = "Suspicious source IP detected: {}".format(source_ip)
+                save_sniffer_data()
+                #new_alert = "Suspicious source IP detected: {}".format(source_ip)
+               
+
+             
+
+            if checkIP(dest_ip):
+                print("\n====== WARNING: IP: {} Reported as Suspicious ======".format(dest_ip))
+                sniffer_data["suspicious_ips"].add(dest_ip)
+                sniffer_data["new_alert"] = "Suspicious destination IP detected: {}".format(dest_ip)
+                save_sniffer_data()
+                #new_alert = "Suspicious destination IP detected: {}".format(dest_ip)
+
+            
+        if checkIP(source_ip) or checkIP(dest_ip):
+            with data_lock:
+                socketio.emit('update', {
+                    'total': sniffer_data["total_packets"],
+                    'suspicious': len(sniffer_data["suspicious_ips"]),
+                    'new_alert': sniffer_data['new_alert']
+                })
+                
+                
+
+        
+             
                 
     print("{} {}".format(timestamp, packet.summary())) # Summary of packet
 
@@ -95,8 +174,8 @@ def run_sniffer():
 
 if __name__ == "__main__":
 
-    sniffer_thread = threading.Thread(target=run_sniffer, daemon=True)
+    sniffer_thread = threading.Thread(target=run_sniffer, daemon=True) # Runs sniffing in seperate thread
     sniffer_thread.start()
 
-    app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False)
+    socketio.run(app, host="0.0.0.0", port=5000, debug=True)
 
