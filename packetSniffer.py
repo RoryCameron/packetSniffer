@@ -1,4 +1,5 @@
 
+# ==================== IMPORTS ====================
 from scapy.all import *
 import time
 import os
@@ -8,18 +9,25 @@ import pickle
 from flask import Flask, render_template
 from flask_socketio import SocketIO, emit
 import threading
+# ========================================
+
 
 # Initialize Flask
 app = Flask(__name__)
 
+# Async updating
 socketio = SocketIO(app, async_mode = "threading", cors_allowed_origins="*")
 
+
+# ==================== ENVIROMENT VARAIBLES ====================
 load_dotenv()
 API_KEY = os.getenv("API_KEY")
 WIFI_INTERFACE = os.getenv("WIFI_INTERFACE")
 URL = os.getenv("URL")
 IP_FILE = os.getenv("IP_FILE")
 SNIFF_DATA_FILE = os.getenv("SNIFF_DATA_FILE")
+# ========================================
+
 
 # Data to be sent to dashboard
 sniffer_data = {
@@ -31,7 +39,7 @@ sniffer_data = {
 
 data_lock = Lock()
 
-
+# ==================== PICKLE FILE CREATION/AMENDING ====================
 # Creates/saves IPs to file
 def saveCheckedIps():
     with open(IP_FILE, "wb") as f:
@@ -67,6 +75,10 @@ def load_sniffer_data():
 
 loadCheckedIps()
 load_sniffer_data()
+# ========================================
+
+
+# ==================== ROUTES ====================
 
 # Default route
 @app.route("/")
@@ -92,7 +104,10 @@ def apply_csp(response):
         "default-src 'self';"
     )
     return response
+# ========================================
 
+
+# ==================== IP API CHECK ====================
 # Makes API call with current packet IP
 def checkIP(ip):
     
@@ -124,8 +139,10 @@ def checkIP(ip):
         return is_malicious # returns True (Suspicious IP)
             
     return False
+# ========================================
 
 
+# ==================== DISPLAY PACKET INFORMATION ====================
 def showPacket(packet):
 
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
@@ -146,7 +163,7 @@ def showPacket(packet):
                 sniffer_data["suspicious_ips"].append(source_ip)
                 sniffer_data["new_alert"] = "{}: Suspicious source IP detected: {}".format(timestamp, source_ip)
 
-                save_sniffer_data()
+                save_sniffer_data() # Saves IP packet data to pickle file, for fornt-end display
     
             if checkIP(dest_ip):
                 print("\n====== WARNING: IP: {} Reported as Suspicious ======".format(dest_ip))
