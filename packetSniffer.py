@@ -37,6 +37,7 @@ sniffer_data = {
 
 }
 
+
 data_lock = Lock()
 
 # ==================== PICKLE FILE CREATION/AMENDING ====================
@@ -110,7 +111,7 @@ def apply_csp(response):
 # ==================== IP API CHECK ====================
 # Makes API call with current packet IP
 def checkIP(ip):
-    
+
     if ip in checked_ips:
         return checked_ips[ip]
 
@@ -133,6 +134,21 @@ def checkIP(ip):
     if response.status_code == 200:
 
         data = response.json()
+        
+        # Test
+        abuse_data = data['data']
+        IP_Data = {
+                'ip': ip,
+                'score': abuse_data['abuseConfidenceScore'],
+                'is_malicious': abuse_data['abuseConfidenceScore'] > 50,
+                'isp': abuse_data.get('isp', 'Unknown'),
+                'country': abuse_data.get('countryCode', 'N/A'),
+                'reports': abuse_data.get('totalReports', 0),
+                'last_reported': abuse_data.get('lastReportedAt', 'Never')
+            }
+        #print(IP_Data) # Test
+        
+
         is_malicious = data['data']['abuseConfidenceScore'] > 50 # Confidence threshhold
         checked_ips[ip] = is_malicious
         saveCheckedIps()
@@ -183,7 +199,7 @@ def showPacket(packet):
                 })
                 
     # Packet summary to terminal     
-    print("{} {}".format(timestamp, packet.summary())) # Summary of packet
+    # print("{} {}".format(timestamp, packet.summary())) # Summary of packet
 
 
 def run_sniffer():
