@@ -199,7 +199,7 @@ def showPacket(packet):
                 })
                 
     # Packet summary to terminal     
-    # print("{} {}".format(timestamp, packet.summary())) # Summary of packet
+    print("{} {}".format(timestamp, packet.summary())) # Summary of packet
 
 
 def run_sniffer():
