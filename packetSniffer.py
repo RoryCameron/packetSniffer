@@ -1,5 +1,4 @@
-
-# ==================== IMPORTS ====================
+# ====== Imports ======
 from scapy.all import *
 import time
 import os
@@ -9,111 +8,49 @@ import pickle
 from flask import Flask, render_template
 from flask_socketio import SocketIO, emit
 import threading
-# ========================================
 
-
-# Initialize Flask
-app = Flask(__name__)
-
-# Async updating
-socketio = SocketIO(app, async_mode = "threading", cors_allowed_origins="*")
-
-
-# ==================== ENVIROMENT VARAIBLES ====================
+# ====== Enviroment variables ======
 load_dotenv()
 API_KEY = os.getenv("API_KEY")
 WIFI_INTERFACE = os.getenv("WIFI_INTERFACE")
 URL = os.getenv("URL")
 IP_FILE = os.getenv("IP_FILE")
 SNIFF_DATA_FILE = os.getenv("SNIFF_DATA_FILE")
-# ========================================
 
 
-# Data to be sent to dashboard
-sniffer_data = {
-    "total_packets": 0,
-    "suspicious_ips": [],
-    "new_alert": None
-
-}
+checked_ips = {} # Stores previously checked IPs - Spares duplicate API calls
 
 
-data_lock = Lock()
+# ============
+# Checks if IP is in private range - Spares uneeded API calls
+def is_private_ip(ip):
 
-# ==================== PICKLE FILE CREATION/AMENDING ====================
-# Creates/saves IPs to file
-def saveCheckedIps():
-    with open(IP_FILE, "wb") as f:
-        pickle.dump(checked_ips, f)
+    octets = list(map(int, ip.split(".")))
 
-# Gets IPs from file
-def loadCheckedIps():
+    if octets[0] == 10:
+        return True
+    if octets[0] == 172 and 16 <= octets[1] <= 31:
+        return True
+    if octets[0] == 192 and octets[1] == 168:
+        return True
     
-    global checked_ips
-
-    try:
-        with open(IP_FILE, "rb") as f:
-            checked_ips = pickle.load(f)
-    except FileNotFoundError:
-        checked_ips = {}
-
-# Gets last alerts from file
-def save_sniffer_data():
-    with open(SNIFF_DATA_FILE, "wb") as f:
-        pickle.dump(sniffer_data, f)
-
-def load_sniffer_data():
-    global sniffer_data
-    try:
-        with open(SNIFF_DATA_FILE, "rb") as f:
-            sniffer_data = pickle.load(f)
-    except FileNotFoundError:
-        sniffer_data = {
-            "total_packets": 0,
-            "suspicious_ips": [],
-            "new_alert": None
-        }
-
-loadCheckedIps()
-load_sniffer_data()
-# ========================================
+    return False # Not a private IP
+# ============
 
 
-# ==================== ROUTES ====================
+# ============
+# Calls Abusel Api to check IP
+def abusel_check(ip):
 
-# Default route
-@app.route("/")
-def dashboard():
-    with data_lock:
-        return render_template("dashboard.html", stats=sniffer_data)
+    # Skips private Ips
+    if is_private_ip(ip):
+        return None
 
-# When user connects (or refreshes)
-@socketio.on('connect')
-def handle_connect():
-    with data_lock:
-        socketio.emit('update', {
-            'total': sniffer_data["total_packets"],
-            'suspicious': sniffer_data["suspicious_ips"],
-            'new_alert': sniffer_data['new_alert']
-        })
-
-# ChatGPT - Prevents inline scripts executing, only allows js from own server, blocks inline script tags
-@app.after_request
-def apply_csp(response):
-    response.headers["Content-Security-Policy"] = (
-        "script-src 'self' https://cdn.socket.io; "
-        "default-src 'self';"
-    )
-    return response
-# ========================================
-
-
-# ==================== IP API CHECK ====================
-# Makes API call with current packet IP
-def checkIP(ip):
-
+    # Skip API call if has recently been checked
     if ip in checked_ips:
-        return checked_ips[ip]
+        if time.time() - checked_ips[ip]["timestamp"] < 3600: # Checked within 1 hour
+            return checked_ips[ip]
+
 
     headers = {
         "Key": API_KEY,
@@ -125,41 +62,36 @@ def checkIP(ip):
         "maxAgeInDays": 90
     }
 
+
     try:
         response = requests.get(URL, headers=headers, params=params)
-    except requests.exceptions.RequestException as e:
-        print(f"Error checking IP {ip}: {e}")
+        response.raise_for_status()
 
-
-    if response.status_code == 200:
-
-        data = response.json()
+        data = response.json()["data"]
         
-        # Test
-        abuse_data = data['data']
         IP_Data = {
                 'ip': ip,
-                'score': abuse_data['abuseConfidenceScore'],
-                'is_malicious': abuse_data['abuseConfidenceScore'] > 50,
-                'isp': abuse_data.get('isp', 'Unknown'),
-                'country': abuse_data.get('countryCode', 'N/A'),
-                'reports': abuse_data.get('totalReports', 0),
-                'last_reported': abuse_data.get('lastReportedAt', 'Never')
+                'score': data['abuseConfidenceScore'],
+                'is_malicious': data['abuseConfidenceScore'] > 50,
+                'isp': data.get('isp', 'Unknown'),
+                'country': data.get('countryCode', 'N/A'),
+                'reports': data.get('totalReports', 0),
+                'last_reported': data.get('lastReportedAt', 'Never'),
             }
-        #print(IP_Data) # Test
-        
 
-        is_malicious = data['data']['abuseConfidenceScore'] > 50 # Confidence threshhold
-        checked_ips[ip] = is_malicious
-        saveCheckedIps()
-        return is_malicious # returns True (Suspicious IP)
-            
-    return False
-# ========================================
+        checked_ips[ip] = {"data": IP_Data, "timestamp": time.time()} # Stores data
+        return IP_Data
+       
+    except Exception as e:
+        print("Error checking IP: {}: {}".format(ip, str(e)))
+        return None
+# ============
 
 
-# ==================== DISPLAY PACKET INFORMATION ====================
-def showPacket(packet):
+# ============
+# Calls API to check IPs
+# Displays packet info and IP check info
+def show_packet(packet):
 
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 
@@ -168,48 +100,21 @@ def showPacket(packet):
         source_ip = packet[IP].src
         dest_ip = packet[IP].dst
 
-        with data_lock:
+        # Check IPs
+        source_data = abusel_check(source_ip)
+        dest_data = abusel_check(dest_ip)
 
-            sniffer_data["total_packets"] += 1
-         
-
-            if checkIP(source_ip):
-                print("\n====== WARNING: IP: {} Reported as Suspicious ======".format(source_ip)) # Message to terminal
-                
-                sniffer_data["suspicious_ips"].append(source_ip)
-                sniffer_data["new_alert"] = "{}: Suspicious source IP detected: {}".format(timestamp, source_ip)
-
-                save_sniffer_data() # Saves IP packet data to pickle file, for fornt-end display
+        # Display packet info and IP check
+        print("\n\n=========================================")
+        print("TIME: {}".format(timestamp))
+        print("SUMMARY: {}".format(packet.summary()))
     
-            if checkIP(dest_ip):
-                print("\n====== WARNING: IP: {} Reported as Suspicious ======".format(dest_ip))
+        if source_data:
+            print("SOURCE IP: {}".format(source_data))
+        if dest_data:
+            print("DESTINATION IP: {}".format(dest_data))
+        print("=========================================")
+# ============  
+ 
 
-                sniffer_data["suspicious_ips"].append(dest_ip)
-                sniffer_data["new_alert"] = "{}: Suspicious destination IP detected: {}".format(timestamp, dest_ip)
-
-                save_sniffer_data()
-
-        # Updates front-end
-        if checkIP(source_ip) or checkIP(dest_ip):
-            with data_lock:
-                socketio.emit('update', {
-                    'total': sniffer_data["total_packets"],
-                    'suspicious': sniffer_data["suspicious_ips"],
-                    'new_alert': sniffer_data['new_alert']
-                })
-                
-    # Packet summary to terminal     
-    print("{} {}".format(timestamp, packet.summary())) # Summary of packet
-
-
-def run_sniffer():
-    sniff(iface=WIFI_INTERFACE, prn=showPacket, store=False, promisc=True)
-
-
-if __name__ == "__main__":
-
-    sniffer_thread = threading.Thread(target=run_sniffer, daemon=True) # Runs sniffing in seperate thread
-    sniffer_thread.start()
-
-    socketio.run(app, host="0.0.0.0", port=5000, debug=True)
-
+sniff(iface=WIFI_INTERFACE, prn=show_packet, store=False, promisc=True)
