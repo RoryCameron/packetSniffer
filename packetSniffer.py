@@ -107,13 +107,15 @@ def show_packet(packet):
         # Display packet info and IP check
         print("\n\n=========================================")
         print("TIME: {}".format(timestamp))
-        print("SUMMARY: {}".format(packet.summary()))
     
         if source_data:
             print("SOURCE IP: {}".format(source_data))
         if dest_data:
             print("DESTINATION IP: {}".format(dest_data))
-        print("=========================================")
+
+
+    print("SUMMARY: {}".format(packet.summary()))
+    print("=========================================")
 # ============  
  
 
