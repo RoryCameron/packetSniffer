@@ -10,6 +10,7 @@ import threading
 from sqlalchemy import create_engine, Column, String, Float, Boolean, Integer, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.inspection import inspect
 import json
 
 # ====== Enviroment variables ======
@@ -17,13 +18,12 @@ load_dotenv()
 API_KEY = os.getenv("API_KEY")
 WIFI_INTERFACE = os.getenv("WIFI_INTERFACE")
 URL = os.getenv("URL")
-IP_FILE = os.getenv("IP_FILE")
-SNIFF_DATA_FILE = os.getenv("SNIFF_DATA_FILE")
+DB = os.getenv("DB")
 
 
 #====== Database Setup ======
 Base = declarative_base()
-engine = create_engine("sqlite:///ip_data.db")
+engine = create_engine(DB)
 Session = sessionmaker(bind=engine)
 session = Session()
 
@@ -44,6 +44,9 @@ class IPCheck(Base):
     reports = Column(Integer)
     last_reported = Column(String)
     timestamp = Column(Float)
+
+    def to_dict(self):
+        return {c.key: getattr(self, c.key) for c in inspect(self).mapper.column_attrs}
 
 Base.metadata.create_all(engine)
 
@@ -75,7 +78,7 @@ def abusel_check(ip):
     # Queries db to find existing record of IP and if it was within the last hour
     existing = session.query(IPCheck).filter_by(ip=ip).first()
     if existing and existing.timestamp and time.time() - existing.timestamp < 3600:
-        return existing.__dict__.copy() # Existing data returned if within an hour, spares API calls
+        return existing.to_dict() # Existing data returned if within an hour, spares API calls
 
     headers = {
         "Key": API_KEY,

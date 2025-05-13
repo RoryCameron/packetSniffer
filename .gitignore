@@ -1,3 +1,2 @@
 .env
-checkIPs.pkl
-sniffer_data.pkl
+ip_data.db
