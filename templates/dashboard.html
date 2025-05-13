@@ -1,23 +1,28 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Packet Sniffer Dashboard</title>
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-    <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <title>Rory's Packet Sniffer</title>
+    <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
 </head>
 <body>
-    <h1>Packet Sniffer Dashboard Prototype</h1>
-    <!-- 
-    <div id="stats">
-        <h2>All Time Stats</h2>
-        <p>Total packets captured: <span id="total">0</span></p> 
-    </div>
-    -->
-    <p class="alert" id="alert"></p>
+    <h1>Rory's Packet Sniffer</h1>
 
-    <div id="IPLog">
-        <h2>Suspicious IP Addresses</h2>
-    </div>
+    <ul id="packets"></ul>
+
+    <script>
+
+        const socket = io();
+
+        socket.on("connect", function() {
+            console.log("Connected to SocketIO server");
+        })
+
+        socket.on("packet", function(data) {
+            const li = document.createElement("li");
+            li.textContent = data.summary;
+            document.getElementById("packets").prepend(li);
+        })
+
+    </script>
 </body>
 </html>

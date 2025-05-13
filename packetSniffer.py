@@ -21,12 +21,20 @@ URL = os.getenv("URL")
 DB = os.getenv("DB")
 
 
-#====== Database Setup ======
+# ====== Database Setup ======
 Base = declarative_base()
 engine = create_engine(DB)
 Session = sessionmaker(bind=engine)
 session = Session()
 
+# ====== Flask App/Routes ======
+app = Flask(__name__)
+
+socketio = SocketIO(app) # updating dashboard
+
+@app.route("/")
+def index():
+    return render_template("dashboard.html")
 
 class IPCheck(Base):
 
@@ -114,7 +122,7 @@ def abusel_check(ip):
 
         # ====== Updates db ======
         if existing: # Checks if already IP record in db
-            for key, value in ip_data.items():
+            for key, value in IP_Data.items():
                 setattr(existing, key, value) # Updates the IP record with new data if over an hour instead of creating new record
         else:
             session.add(IPCheck(**IP_Data)) # Adds new record to db
@@ -154,10 +162,21 @@ def show_packet(packet):
         if dest_data:
             print("DESTINATION IP: {}".format(dest_data))
 
+    packet_summary = packet.summary()
+    socketio.emit("packet", {"summary": packet_summary})
 
-    print("SUMMARY: {}".format(packet.summary()))
+    print("SUMMARY: {}".format(packet_summary))
     print("=========================================")
 # ============  
  
 
-sniff(iface=WIFI_INTERFACE, prn=show_packet, store=False, promisc=True)
+def start_sniffing():
+    sniff(iface=WIFI_INTERFACE, prn=show_packet, store=False, promisc=True)
+
+if __name__ == "__main__":
+
+    # Start sniffer thread in background
+    sniffer_thread = threading.Thread(target=start_sniffing, daemon=True)
+    sniffer_thread.start()
+
+    socketio.run(app, host="0.0.0.0", port=5000)
