@@ -1,0 +1,100 @@
+/* General styling for the page */
+* {
+    box-sizing: border-box;  /* Ensures padding and borders are included in width/height */
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f9f9f9;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;  /* Prevent horizontal scroll if there's any overflow */
+}
+
+/* Title styling */
+h1 {
+    text-align: center;
+    margin-top: 20px;
+    color: #156082;  /* Changed title color */
+}
+
+/* Container for the packet cards */
+.packet-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    margin: 20px;  /* Adds margin around the entire container */
+    padding: 0;
+    width: 100%; /* Ensures the container takes up 100% of the width */
+    max-width: 100vw; /* Prevents overflow beyond the viewport */
+    height: 100vh; /* Take up full height of the screen */
+    overflow-y: auto; /* Allows scrolling if the content overflows vertically */
+    overflow-x: hidden; /* Prevents horizontal scrolling */
+}
+
+/* Styling for each packet card */
+.packet-card {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    width: 100%;  /* Make the packet cards full width */
+    max-width: calc(100% - 40px); /* Prevent overflow by ensuring width minus margins */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    margin-bottom: 15px;  /* Space between each card */
+    height: auto; /* Let the height adjust based on content */
+    transition: transform 0.2s ease;
+    border-left: 5px solid #156082;  /* Changed border color */
+}
+
+/* Hover effect for cards */
+.packet-card:hover {
+    transform: scale(1.03);
+}
+
+/* Header styling for packet card */
+.packet-header {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #156082;  /* Changed header color */
+}
+
+/* Styling for the packet summary text */
+.packet-summary {
+    font-size: 1em;
+    margin: 10px 0;
+    color: #555;
+}
+
+/* Footer containing the timestamp and packet number */
+.packet-footer {
+    font-size: 1.1em;
+    color: #888;
+    margin-top: 10px;
+    text-align: right;
+}
+
+/* Styling for the packet number */
+.packet-number {
+    font-weight: bold;
+    color: #156082;  /* Changed packet number color */
+}
+
+/* Styling for the timestamp */
+.timestamp {
+    font-style: italic;
+    font-size: 1.2em;
+    color: #156082;  /* Changed timestamp color */
+}
+
+/* Styling for the Live Packets heading */
+h2 {
+    font-size: 2em;
+    color: #156082;  /* Matching the color */
+    margin: 0;  /* Remove any extra margin */
+    padding-left: 20px;  /* Adds left padding to match the packet container */
+    text-align: left;  /* Aligns the heading to the left */
+}

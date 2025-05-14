@@ -1,28 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rory's Packet Sniffer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
 </head>
 <body>
-    <h1>Rory's Packet Sniffer</h1>
+    <h1>Rory's Packet Sniffer Dashboard!</h1>
 
-    <ul id="packets"></ul>
+    <!-- <h2>Live Packets!</h2> -->
 
-    <script>
+    <div class="packet-container" id="packets"></div>
 
-        const socket = io();
-
-        socket.on("connect", function() {
-            console.log("Connected to SocketIO server");
-        })
-
-        socket.on("packet", function(data) {
-            const li = document.createElement("li");
-            li.textContent = data.summary;
-            document.getElementById("packets").prepend(li);
-        })
-
-    </script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>

@@ -36,6 +36,7 @@ socketio = SocketIO(app) # updating dashboard
 def index():
     return render_template("dashboard.html")
 
+
 class IPCheck(Base):
 
     __tablename__ = "ip_checks"
@@ -163,7 +164,7 @@ def show_packet(packet):
             print("DESTINATION IP: {}".format(dest_data))
 
     packet_summary = packet.summary()
-    socketio.emit("packet", {"summary": packet_summary})
+    # socketio.emit("packet", {"summary": packet_summary}) # Updates page with packet summary, probably causes lag
 
     print("SUMMARY: {}".format(packet_summary))
     print("=========================================")
