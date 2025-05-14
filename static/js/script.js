@@ -4,6 +4,28 @@ let packetCount = 0;
 // Establish Socket.IO connection
 const socket = io();
 
+socket.on('new_malicious_ip', function(ipData) {
+    const ipsList = document.getElementById('ips-list');
+    
+    // Create a new div for the new IP and append it to the list
+    const ipDiv = document.createElement('div');
+    ipDiv.classList.add('ip-entry');
+    ipDiv.innerHTML = `
+        <p><strong>IP:</strong> ${ipData.ip}</p>
+        <p><strong>Score:</strong> ${ipData.score}</p>
+        <p><strong>Is Malicious:</strong> ${ipData.is_malicious}</p>
+        <p><strong>Last Reported:</strong> ${ipData.last_reported}</p>
+        <p><strong>Reports:</strong> ${ipData.reports}</p>
+        <p><strong>Domain:</strong> ${ipData.domain}</p>
+        <p><strong>Usage Type:</strong> ${ipData.usage_type}</p>
+        <p><strong>Hostnames:</strong> ${ipData.hostnames.join(", ")}</p>
+        <p><strong>Country:</strong> ${ipData.country_name} (${ipData.country})</p>
+        <p><strong>ISP:</strong> ${ipData.isp}</p>
+    `;
+    ipsList.prepend(ipDiv);
+});
+
+
 // Listen for incoming packet data from the server
 socket.on("packet", function(data) {
     console.log("Received packet data: ", data);

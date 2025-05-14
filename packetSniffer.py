@@ -34,7 +34,12 @@ socketio = SocketIO(app) # updating dashboard
 
 @app.route("/")
 def index():
-    return render_template("dashboard.html")
+
+    # Gets malicious ips when user connects
+    malicious_ips = session.query(IPCheck).filter_by(is_malicious=True).all()
+    malicious_ips_data = [ip.to_dict() for ip in malicious_ips]
+
+    return render_template("dashboard.html", malicious_ips=malicious_ips_data)
 
 
 class IPCheck(Base):
@@ -129,6 +134,10 @@ def abusel_check(ip):
             session.add(IPCheck(**IP_Data)) # Adds new record to db
 
         session.commit()
+
+        # Sends IP data to front end if IP is malicious
+        if IP_Data["is_malicious"]:
+            socketio.emit("new_malicious_ip", IP_Data)
 
         return IP_Data
        

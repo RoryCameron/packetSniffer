@@ -10,6 +10,29 @@
 <body>
     <h1>Rory's Packet Sniffer Dashboard!</h1>
 
+    <div class="container">
+        <h2>Malicious IPs</h2>
+        <div id="ips-list">
+            {% for ip in malicious_ips %}
+                <div class="ip-entry">
+                    <p><strong>IP:</strong> {{ ip.ip }}</p>
+                    <p><strong>Score:</strong> {{ ip.score }}</p>
+                    <p><strong>Is Malicious:</strong> {{ ip.is_malicious }}</p>
+                    <p><strong>Last Reported:</strong> {{ ip.last_reported }}</p>
+                    <p><strong>Reports:</strong> {{ ip.reports }}</p>
+                    <p><strong>Domain:</strong> {{ ip.domain }}</p>
+                    <p><strong>Usage Type:</strong> {{ ip.usage_type }}</p>
+                    <p><strong>Hostnames:</strong> {{ ip.hostnames }}</p>
+                    <p><strong>Country:</strong> {{ ip.country_name }} ({{ ip.country }})</p>
+                    <p><strong>ISP:</strong> {{ ip.isp }}</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+
+
+
     <!-- <h2>Live Packets!</h2> -->
 
     <div class="packet-container" id="packets"></div>
