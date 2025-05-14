@@ -12,6 +12,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.inspection import inspect
 import json
+from datetime import datetime
+
 
 # ====== Enviroment variables ======
 load_dotenv()
@@ -19,6 +21,7 @@ API_KEY = os.getenv("API_KEY")
 WIFI_INTERFACE = os.getenv("WIFI_INTERFACE")
 URL = os.getenv("URL")
 DB = os.getenv("DB")
+
 
 
 # ====== Database Setup ======
@@ -41,6 +44,13 @@ def index():
 
     return render_template("dashboard.html", malicious_ips=malicious_ips_data)
 
+# Some ChatGPT Fix for displaying time on front end
+@app.template_filter('datetimeformat')
+def datetimeformat(value):
+    # Converts the Unix timestamp into a readable date format
+    if value:
+        return datetime.utcfromtimestamp(value).strftime('%Y-%m-%d %H:%M:%S')
+    return value
 
 class IPCheck(Base):
 

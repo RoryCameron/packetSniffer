@@ -21,6 +21,7 @@ socket.on('new_malicious_ip', function(ipData) {
         <p><strong>Hostnames:</strong> ${ipData.hostnames.join(", ")}</p>
         <p><strong>Country:</strong> ${ipData.country_name} (${ipData.country})</p>
         <p><strong>ISP:</strong> ${ipData.isp}</p>
+        <p><strong>Detected At:</strong> ${new Date(ipData.timestamp * 1000).toLocaleString()}</p>
     `;
     ipsList.prepend(ipDiv);
 });

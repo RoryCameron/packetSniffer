@@ -25,6 +25,7 @@
                     <p><strong>Hostnames:</strong> {{ ip.hostnames }}</p>
                     <p><strong>Country:</strong> {{ ip.country_name }} ({{ ip.country }})</p>
                     <p><strong>ISP:</strong> {{ ip.isp }}</p>
+                    <p><strong>Detected At:</strong> {{ ip.timestamp | datetimeformat }}</p>
                 </div>
             {% endfor %}
         </div>
