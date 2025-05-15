@@ -10,8 +10,10 @@
 <body>
     <h1>Rory's Packet Sniffer Dashboard!</h1>
 
+    <p class="new_alert" id="new_alert"></p>
+
     <div class="container">
-        <h2>Malicious IPs</h2>
+        <h2>Suspicious IPs Detected</h2>
         <div id="ips-list">
             {% for ip in malicious_ips %}
                 <div class="ip-entry">

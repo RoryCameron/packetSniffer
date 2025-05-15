@@ -26,6 +26,13 @@ socket.on('new_malicious_ip', function(ipData) {
     ipsList.prepend(ipDiv);
 });
 
+socket.on("new_alert", function(ipData) {
+
+    const alert = document.getElementById("new_alert");
+
+    alert.textContent = ipData
+
+});
 
 // Listen for incoming packet data from the server
 socket.on("packet", function(data) {

@@ -146,8 +146,10 @@ def abusel_check(ip):
         session.commit()
 
         # Sends IP data to front end if IP is malicious
+        
         if IP_Data["is_malicious"]:
             socketio.emit("new_malicious_ip", IP_Data)
+        
 
         return IP_Data
        
@@ -163,6 +165,8 @@ def abusel_check(ip):
 def show_packet(packet):
 
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+    packet_summary = packet.summary()
+    new_alert = "NEW ALERT: {}: {}".format(timestamp, packet_summary)
 
     if packet.haslayer(IP):
 
@@ -179,10 +183,16 @@ def show_packet(packet):
     
         if source_data:
             print("SOURCE IP: {}".format(source_data))
+            
+            if source_data["is_malicious"]:
+                socketio.emit("new_alert", new_alert)
+
         if dest_data:
             print("DESTINATION IP: {}".format(dest_data))
 
-    packet_summary = packet.summary()
+            if dest_data["is_malicious"]:
+                socketio.emit("new_alert", new_alert)
+
     # socketio.emit("packet", {"summary": packet_summary}) # Updates page with packet summary, probably causes lag
 
     print("SUMMARY: {}".format(packet_summary))
