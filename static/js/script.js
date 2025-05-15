@@ -27,11 +27,28 @@ socket.on('new_malicious_ip', function(ipData) {
 });
 
 socket.on("new_alert", function(ipData) {
+    if (!ipData || ipData.trim() === "") return;
 
-    const alert = document.getElementById("new_alert");
+    const container = document.getElementById("alerts-container");
 
-    alert.textContent = ipData
+    // Create the alert box
+    const alertBox = document.createElement("div");
+    alertBox.classList.add("alert-box");
 
+    // Create the close button
+    const closeButton = document.createElement("button");
+    closeButton.classList.add("close-btn");
+    closeButton.innerHTML = "&times;";
+    closeButton.onclick = () => alertBox.remove();
+
+    // Add message text
+    alertBox.textContent = ipData;
+
+    // Append close button after setting text (so it stays inside the box)
+    alertBox.appendChild(closeButton);
+
+    // Add the alert to the top
+    container.prepend(alertBox);
 });
 
 // Listen for incoming packet data from the server
